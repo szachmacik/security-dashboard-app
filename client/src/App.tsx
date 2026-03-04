@@ -15,6 +15,7 @@ import AuditSchedule from "./pages/AuditSchedule";
 import TransferCalculator from "./pages/TransferCalculator";
 import PhysicalSecurity from "./pages/PhysicalSecurity";
 import ConfigExport from "./pages/ConfigExport";
+import SecureNotes from "./pages/SecureNotes";
 
 function Router() {
   return (
@@ -30,6 +31,7 @@ function Router() {
         <Route path="/calculator" component={TransferCalculator} />
         <Route path="/physical" component={PhysicalSecurity} />
         <Route path="/config" component={ConfigExport} />
+        <Route path="/notes" component={SecureNotes} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { Activity, AlertTriangle, BookOpen, CheckCircle, Monitor, QrCode, Shield, ShieldAlert, TrendingUp, Wifi, WifiOff, Zap } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import { Link } from "wouter";
 
 function StatusBadge({ status }: { status: string }) {
@@ -43,10 +44,36 @@ function SecurityScore({ score }: { score: number }) {
 }
 
 export default function Dashboard() {
+  const utils = trpc.useUtils();
   const { data: devices = [] } = trpc.devices.list.useQuery();
-  const { data: opsecItems = [] } = trpc.opsec.list.useQuery();
+  const { data: opsecItems = [], isSuccess: opsecLoaded } = trpc.opsec.list.useQuery();
   const { data: audits = [] } = trpc.audits.list.useQuery();
   const { data: smartDevices = [] } = trpc.smartHome.list.useQuery();
+  const { data: protocols = [], isSuccess: protocolsLoaded } = trpc.protocols.list.useQuery();
+
+  const seedMutation = trpc.opsec.seed.useMutation({
+    onSuccess: (res: any) => {
+      if (res?.seeded) {
+        utils.opsec.list.invalidate();
+        toast.success(`Załadowano domyślną listę OPSEC (${res.count} elementów)`);
+      }
+    },
+  });
+  const seedProtocolsMutation = trpc.protocols.seedBuiltIn.useMutation({
+    onSuccess: () => utils.protocols.list.invalidate(),
+  });
+
+  useEffect(() => {
+    if (opsecLoaded && opsecItems.length === 0 && !seedMutation.isPending) {
+      seedMutation.mutate();
+    }
+  }, [opsecLoaded]);
+
+  useEffect(() => {
+    if (protocolsLoaded && protocols.length === 0 && !seedProtocolsMutation.isPending) {
+      seedProtocolsMutation.mutate();
+    }
+  }, [protocolsLoaded]);
 
   const stats = useMemo(() => {
     const airGapped = devices.filter(d => d.isolationStatus === "air_gapped").length;

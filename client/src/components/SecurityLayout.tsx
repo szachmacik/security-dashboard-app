@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  FileText,
   Home,
   Lock,
   LogOut,
@@ -33,6 +34,7 @@ const navItems = [
   { path: "/calculator", icon: Calculator, label: "Kalkulator", description: "Wydajność transferu" },
   { path: "/physical", icon: Shield, label: "Fizyczne", description: "Zabezpieczenia sprzętowe" },
   { path: "/config", icon: Download, label: "Eksport/Import", description: "Konfiguracja" },
+  { path: "/notes", icon: FileText, label: "Secure Notes", description: "Zaszyfrowane notatki" },
 ];
 
 export default function SecurityLayout({ children }: { children: React.ReactNode }) {

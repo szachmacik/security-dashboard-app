@@ -5,7 +5,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
-import { seedDefaultData } from "./seed.ts";
+import { seedDefaultData } from "./seed";
 
 export const appRouter = router({
   system: systemRouter,
@@ -273,6 +273,8 @@ export type AppRouter = typeof appRouter;
 
 // ─── Seed built-in protocols ──────────────────────────────────────────────────
 async function seedBuiltInProtocols(userId: number) {
+  const existing = await db.getSecurityProtocols(userId);
+  if (existing.length > 0) return { seeded: false };
   const protocols = [
     {
       name: "Air-Gap Isolation",

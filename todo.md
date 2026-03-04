@@ -119,6 +119,29 @@
 - [ ] Real-time threat feed integration (future enhancement)
 - [ ] Two-factor authentication for sensitive operations (future enhancement)
 
+## Fixes & Improvements (v2)
+- [x] Fix .dark CSS override (sync with :root security theme)
+- [x] Fix seed import (removed .ts extension)
+- [x] Add idempotent seed check for protocols
+- [x] Add auto-seed on first login (Dashboard useEffect)
+- [x] Add SecureNotes page with full CRUD, tags, copy, show/hide
+- [x] Add SecureNotes to navigation (FileText icon)
+- [x] Add SecureNotes route to App.tsx
+
+## GitHub
+- [x] Repository: szachmacik/cyber-bunker-security (private)
+- [x] README.md with full documentation
+- [x] docs/OPSEC_CHECKLIST.md
+- [x] docs/PROTOCOLS.md
+- [x] docs/PHYSICAL_SECURITY.md
+- [x] docs/THREAT_MODEL.md
+- [x] docs/DEPLOYMENT_TRACKING.md
+- [x] code-patterns/security-score.ts
+- [x] code-patterns/qr-transfer.ts
+- [x] code-patterns/audit-logger.ts
+- [ ] Push v2 improvements to GitHub
+
 ## Google Drive Tracking
-- [ ] Create tracking file on Google Drive
-- [ ] Set up periodic verification schedule
+- [x] Create tracking file on Google Drive
+- [ ] Update with GitHub link and test results
+- [ ] Set up periodic verification schedule (weekly Monday 9:00)
