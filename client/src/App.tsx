@@ -4,32 +4,43 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
+import SecurityLayout from "./components/SecurityLayout";
+import Dashboard from "./pages/Dashboard";
+import DeviceRegistry from "./pages/DeviceRegistry";
+import QRTransfer from "./pages/QRTransfer";
+import OpsecChecklist from "./pages/OpsecChecklist";
+import SmartHome from "./pages/SmartHome";
+import ProtocolLibrary from "./pages/ProtocolLibrary";
+import AuditSchedule from "./pages/AuditSchedule";
+import TransferCalculator from "./pages/TransferCalculator";
+import PhysicalSecurity from "./pages/PhysicalSecurity";
+import ConfigExport from "./pages/ConfigExport";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
+    <SecurityLayout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/devices" component={DeviceRegistry} />
+        <Route path="/qr-transfer" component={QRTransfer} />
+        <Route path="/opsec" component={OpsecChecklist} />
+        <Route path="/smart-home" component={SmartHome} />
+        <Route path="/protocols" component={ProtocolLibrary} />
+        <Route path="/audits" component={AuditSchedule} />
+        <Route path="/calculator" component={TransferCalculator} />
+        <Route path="/physical" component={PhysicalSecurity} />
+        <Route path="/config" component={ConfigExport} />
+        <Route path="/404" component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </SecurityLayout>
   );
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
           <Router />

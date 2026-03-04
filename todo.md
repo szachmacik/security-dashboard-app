@@ -1,0 +1,124 @@
+# Security Dashboard - TODO
+
+## Database & Backend
+- [x] Schema: devices table (offline devices registry)
+- [x] Schema: opsec_items table (checklist items)
+- [x] Schema: audit_logs table (security audit history)
+- [x] Schema: security_protocols table (protocol library)
+- [x] Schema: smart_home_devices table (Zigbee/Z-Wave devices)
+- [x] Schema: transfer_sessions table (QR transfer sessions)
+- [x] Schema: secure_notes table (encrypted notes)
+- [x] tRPC: devices router (CRUD)
+- [x] tRPC: opsec router (checklist management)
+- [x] tRPC: audit router (schedule & history)
+- [x] tRPC: protocols router (library)
+- [x] tRPC: smart_home router
+- [x] tRPC: transfer router (QR sessions)
+- [x] tRPC: config export/import router
+- [x] tRPC: notes router (secure notes)
+- [x] Seed data for default OPSEC checklist items
+- [x] Vitest tests - 14 tests passing
+
+## Frontend - Layout & Navigation
+- [x] SecurityLayout with sidebar (10 modules)
+- [x] Dark theme (security-focused, OKLCH colors)
+- [x] Global CSS variables and JetBrains Mono typography
+- [x] Auth guard (login screen for unauthenticated users)
+
+## Module 1: Dashboard (Overview)
+- [x] Security Score circular indicator
+- [x] Device status summary cards (Air-Gap, Faraday, Offline, Online)
+- [x] OPSEC completion stats
+- [x] Pending/overdue audits counter
+- [x] Smart Home device count
+- [x] Protocol library count
+- [x] Recent devices list
+- [x] OPSEC checklist preview
+
+## Module 2: QR Transfer
+- [x] QR code generator from text/data input
+- [x] Dynamic QR rendering with qrcode library
+- [x] Transfer session management (create, list)
+- [x] Session status tracking (pending/active/completed/failed)
+- [x] Transfer history log
+- [x] Copy to clipboard functionality
+- [x] Download QR as PNG
+
+## Module 3: Device Registry
+- [x] Device list with status badges
+- [x] Add device form (name, type, location, isolation status, notes)
+- [x] Edit/delete device
+- [x] Last sync timestamp tracking
+- [x] Isolation status display (Air-Gap, Faraday, Offline, Online)
+- [x] Device type icons
+
+## Module 4: OPSEC Checklist
+- [x] Category tabs (Physical, Network, Cryptographic, OPSEC, Smart Home)
+- [x] Interactive checkbox items with descriptions
+- [x] Progress tracking per category
+- [x] Priority badges (Critical, High, Medium, Low)
+- [x] Mark items complete/incomplete
+- [x] Load default items button
+- [x] Add custom items
+
+## Module 5: Smart Home Integration
+- [x] Device list (Zigbee/Z-Wave/WiFi/Bluetooth)
+- [x] Power socket control toggle (on/off)
+- [x] Device status monitoring
+- [x] Add/edit/delete smart home devices
+- [x] Protocol type display
+
+## Module 6: Security Protocols Library
+- [x] Protocol cards (Air-Gap, Optical Bridge, Faraday Box, Dead Drop + 2 more)
+- [x] Implementation instructions per protocol
+- [x] Difficulty/risk/effectiveness ratings
+- [x] Search/filter protocols
+- [x] Custom protocol creation
+- [x] Built-in protocols (6 pre-loaded)
+
+## Module 7: Audit Schedule
+- [x] Create/edit audit reminders
+- [x] Recurrence settings (once/daily/weekly/monthly)
+- [x] Audit history log
+- [x] Status tracking (pending/completed/overdue/cancelled)
+- [x] Severity levels
+- [x] Findings documentation
+
+## Module 8: Transfer Calculator
+- [x] QR code throughput calculator
+- [x] Video steganography bandwidth estimator
+- [x] Acoustic bridge speed calculator
+- [x] Optical LED bridge calculator
+- [x] Comparison table with all methods
+- [x] Custom parameter inputs
+
+## Module 9: Physical Security Documentation
+- [x] Kill-Switch USB documentation
+- [x] Laser Tripwire setup guide
+- [x] Magnetic Air-Gap documentation
+- [x] Faraday cage instructions
+- [x] Hardware Security Module guide
+- [x] Tamper-evident seals guide
+- [x] Difficulty/cost ratings per solution
+
+## Module 10: Config Export/Import
+- [x] Export configuration as JSON package
+- [x] Import configuration from JSON
+- [x] AES-256 encryption simulation
+- [x] Export history
+- [x] Integrity verification (SHA-256 hash)
+- [x] Selective export (choose modules)
+
+## Extra Security Features (proactive additions)
+- [x] Threat level indicator (global security score 0-100)
+- [x] Secure notes module (encrypted notes storage)
+- [x] Protocol effectiveness ratings
+- [x] Incident response documentation in protocols
+- [ ] Password/key strength evaluator (future enhancement)
+- [ ] Network exposure analyzer (future enhancement)
+- [ ] Real-time threat feed integration (future enhancement)
+- [ ] Two-factor authentication for sensitive operations (future enhancement)
+
+## Google Drive Tracking
+- [ ] Create tracking file on Google Drive
+- [ ] Set up periodic verification schedule
