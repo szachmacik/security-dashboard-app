@@ -16,6 +16,10 @@ import TransferCalculator from "./pages/TransferCalculator";
 import PhysicalSecurity from "./pages/PhysicalSecurity";
 import ConfigExport from "./pages/ConfigExport";
 import SecureNotes from "./pages/SecureNotes";
+import IncidentResponse from "./pages/IncidentResponse";
+import ThreatIndicators from "./pages/ThreatIndicators";
+import PasswordEvaluator from "./pages/PasswordEvaluator";
+import NetworkExposure from "./pages/NetworkExposure";
 
 function Router() {
   return (
@@ -32,6 +36,10 @@ function Router() {
         <Route path="/physical" component={PhysicalSecurity} />
         <Route path="/config" component={ConfigExport} />
         <Route path="/notes" component={SecureNotes} />
+        <Route path="/incidents" component={IncidentResponse} />
+        <Route path="/threats" component={ThreatIndicators} />
+        <Route path="/passwords" component={PasswordEvaluator} />
+        <Route path="/network" component={NetworkExposure} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

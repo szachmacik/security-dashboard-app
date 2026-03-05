@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { Activity, AlertTriangle, BookOpen, CheckCircle, Monitor, QrCode, Shield, ShieldAlert, TrendingUp, Wifi, WifiOff, Zap } from "lucide-react";
+import { Activity, AlertTriangle, BookOpen, CheckCircle, Clock, Key, Monitor, Network, QrCode, Shield, ShieldAlert, TrendingUp, Wifi, WifiOff, Zap } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -50,6 +50,9 @@ export default function Dashboard() {
   const { data: audits = [] } = trpc.audits.list.useQuery();
   const { data: smartDevices = [] } = trpc.smartHome.list.useQuery();
   const { data: protocols = [], isSuccess: protocolsLoaded } = trpc.protocols.list.useQuery();
+  const { data: incidents = [] } = trpc.incidents.list.useQuery();
+  const { data: threats = [] } = trpc.threats.list.useQuery();
+  const { data: activityLog = [] } = trpc.stats.activityLog.useQuery({ limit: 10 });
 
   const seedMutation = trpc.opsec.seed.useMutation({
     onSuccess: (res: any) => {
@@ -95,8 +98,20 @@ export default function Dashboard() {
     if (overdueAudits === 0) score += 5;
     score = Math.min(100, Math.round(score));
 
-    return { airGapped, faraday, offline, online, totalOpsec, completedOpsec, criticalPending, pendingAudits, overdueAudits, smartOnline, score };
-  }, [devices, opsecItems, audits, smartDevices]);
+    const openIncidents = incidents.filter(i => i.status === "open" || i.status === "investigating").length;
+    const criticalIncidents = incidents.filter(i => i.severity === "critical" && (i.status === "open" || i.status === "investigating")).length;
+    const activeThreats = threats.filter(t => t.status === "active").length;
+    const criticalThreats = threats.filter(t => t.severity === "critical" && t.status === "active").length;
+
+    // Enhanced security score
+    if (criticalIncidents > 0) score -= criticalIncidents * 5;
+    if (criticalThreats > 0) score -= criticalThreats * 3;
+    if (activeThreats === 0) score += 5;
+    if (openIncidents === 0) score += 5;
+    score = Math.min(100, Math.max(0, Math.round(score)));
+
+    return { airGapped, faraday, offline, online, totalOpsec, completedOpsec, criticalPending, pendingAudits, overdueAudits, smartOnline, score, openIncidents, criticalIncidents, activeThreats, criticalThreats };
+  }, [devices, opsecItems, audits, smartDevices, incidents, threats]);
 
   const recentAudits = audits.slice(0, 5);
 
@@ -134,7 +149,9 @@ export default function Dashboard() {
           <StatCard icon={CheckCircle} label="OPSEC Ukończone" value={`${stats.completedOpsec}/${stats.totalOpsec}`} sub={`${stats.criticalPending} krytycznych oczekuje`} color={stats.criticalPending > 0 ? "red" : "green"} href="/opsec" />
           <StatCard icon={AlertTriangle} label="Zaległe Audyty" value={stats.overdueAudits} sub={`${stats.pendingAudits} zaplanowanych`} color={stats.overdueAudits > 0 ? "red" : "green"} href="/audits" />
           <StatCard icon={Zap} label="Smart Home" value={stats.smartOnline} sub={`${smartDevices.length} urządzeń łącznie`} color="blue" href="/smart-home" />
-          <StatCard icon={Shield} label="Protokoły" value="6" sub="Wbudowanych aktywnych" color="purple" href="/protocols" />
+          <StatCard icon={Shield} label="Protokoły" value={protocols.length || 6} sub="Wbudowanych aktywnych" color="purple" href="/protocols" />
+          <StatCard icon={AlertTriangle} label="Otwarte Incydenty" value={stats.openIncidents} sub={`${stats.criticalIncidents} krytycznych`} color={stats.criticalIncidents > 0 ? "red" : stats.openIncidents > 0 ? "yellow" : "green"} href="/incidents" />
+          <StatCard icon={ShieldAlert} label="Aktywne Zagrożenia" value={stats.activeThreats} sub={`${stats.criticalThreats} krytycznych`} color={stats.criticalThreats > 0 ? "red" : stats.activeThreats > 0 ? "yellow" : "green"} href="/threats" />
         </div>
       </div>
 
@@ -250,22 +267,57 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Activity Log */}
+        <div className="bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" /> AKTYWNOŚĆ
+            </h2>
+          </div>
+          {activityLog.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Activity className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">Brak aktywności</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {activityLog.map((log: any) => (
+                <div key={log.id} className="flex items-start gap-2 py-1.5 border-b border-border/30 last:border-0">
+                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                    log.severity === "critical" ? "bg-red-400" :
+                    log.severity === "error" ? "bg-orange-400" :
+                    log.severity === "warning" ? "bg-yellow-400" : "bg-green-400"
+                  }`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-foreground truncate">{log.details}</p>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {new Date(log.createdAt).toLocaleString("pl-PL", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Quick Actions */}
         <div className="bg-card border border-border rounded-xl p-5">
           <h2 className="text-sm font-mono font-semibold text-foreground mb-4">SZYBKIE AKCJE</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {[
-              { href: "/qr-transfer", icon: QrCode, label: "Nowy QR Transfer", color: "border-primary/30 hover:bg-primary/10" },
-              { href: "/opsec", icon: CheckCircle, label: "Sprawdź OPSEC", color: "border-green-400/30 hover:bg-green-400/10" },
-              { href: "/audits", icon: Activity, label: "Zaplanuj Audyt", color: "border-yellow-400/30 hover:bg-yellow-400/10" },
-              { href: "/protocols", icon: BookOpen, label: "Protokoły", color: "border-blue-400/30 hover:bg-blue-400/10" },
-              { href: "/devices", icon: Monitor, label: "Dodaj Urządzenie", color: "border-purple-400/30 hover:bg-purple-400/10" },
-              { href: "/config", icon: Shield, label: "Eksportuj Config", color: "border-orange-400/30 hover:bg-orange-400/10" },
+              { href: "/qr-transfer", icon: QrCode, label: "QR Transfer", color: "border-primary/30 hover:bg-primary/10" },
+              { href: "/opsec", icon: CheckCircle, label: "OPSEC", color: "border-green-400/30 hover:bg-green-400/10" },
+              { href: "/incidents", icon: AlertTriangle, label: "Incydenty", color: "border-red-400/30 hover:bg-red-400/10" },
+              { href: "/threats", icon: ShieldAlert, label: "Zagrożenia", color: "border-orange-400/30 hover:bg-orange-400/10" },
+              { href: "/passwords", icon: Key, label: "Hasła", color: "border-yellow-400/30 hover:bg-yellow-400/10" },
+              { href: "/network", icon: Network, label: "Ekspozycja", color: "border-cyan-400/30 hover:bg-cyan-400/10" },
+              { href: "/audits", icon: Activity, label: "Audyty", color: "border-blue-400/30 hover:bg-blue-400/10" },
+              { href: "/config", icon: Shield, label: "Eksport", color: "border-purple-400/30 hover:bg-purple-400/10" },
             ].map(action => (
               <Link key={action.href} href={action.href}>
-                <div className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${action.color}`}>
-                  <action.icon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs text-foreground font-mono">{action.label}</span>
+                <div className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all ${action.color}`}>
+                  <action.icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-xs text-foreground font-mono truncate">{action.label}</span>
                 </div>
               </Link>
             ))}

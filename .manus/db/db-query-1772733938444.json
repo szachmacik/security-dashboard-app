@@ -1,0 +1,37 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3jSTeLwusgZ5vA4.b94007a0e24c --database PLTHGg6uJ5MQoKnCedZ5nh --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "audit_schedule"
+    },
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "devices"
+    },
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "opsec_items"
+    },
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "secure_notes"
+    },
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "security_protocols"
+    },
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "smart_home_devices"
+    },
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "transfer_sessions"
+    },
+    {
+      "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_PLTHGg6uJ5MQoKnCedZ5nh\n__drizzle_migrations\naudit_schedule\ndevices\nopsec_items\nsecure_notes\nsecurity_protocols\nsmart_home_devices\ntransfer_sessions\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

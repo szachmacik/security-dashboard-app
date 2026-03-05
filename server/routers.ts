@@ -18,6 +18,14 @@ export const appRouter = router({
     }),
   }),
 
+  // ─── Dashboard Stats ─────────────────────────────────────────────────────────
+  stats: router({
+    security: protectedProcedure.query(({ ctx }) => db.getSecurityStats(ctx.user.id)),
+    activityLog: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(50) }))
+      .query(({ ctx, input }) => db.getActivityLog(ctx.user.id, input.limit)),
+  }),
+
   // ─── Devices ────────────────────────────────────────────────────────────────
   devices: router({
     list: protectedProcedure.query(({ ctx }) => db.getDevices(ctx.user.id)),
@@ -27,37 +35,57 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1),
-        type: z.enum(["laptop", "phone", "tablet", "server", "raspberry_pi", "usb_drive", "other"]),
+        type: z.enum(["laptop", "desktop", "phone", "tablet", "server", "raspberry_pi", "usb_drive", "other"]),
         location: z.string().optional(),
         isolationStatus: z.enum(["air_gapped", "faraday", "offline", "online"]),
+        os: z.string().optional(),
+        purpose: z.string().optional(),
+        riskLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
         notes: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) =>
-        db.createDevice({ ...input, userId: ctx.user.id })
-      ),
+      .mutation(async ({ ctx, input }) => {
+        await db.createDevice({ ...input, userId: ctx.user.id });
+        await db.logActivity({ userId: ctx.user.id, action: "device_added", module: "devices", details: `Dodano urządzenie: ${input.name}`, severity: "info" });
+      }),
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).optional(),
-        type: z.enum(["laptop", "phone", "tablet", "server", "raspberry_pi", "usb_drive", "other"]).optional(),
+        type: z.enum(["laptop", "desktop", "phone", "tablet", "server", "raspberry_pi", "usb_drive", "other"]).optional(),
         location: z.string().optional(),
         isolationStatus: z.enum(["air_gapped", "faraday", "offline", "online"]).optional(),
-        isActive: z.boolean().optional(),
+        isVerified: z.boolean().optional(),
         lastSync: z.date().optional(),
         notes: z.string().optional(),
+        riskLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
+        os: z.string().optional(),
+        purpose: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
-        return db.updateDevice(id, ctx.user.id, data);
+        await db.updateDevice(id, ctx.user.id, data);
+        if (data.isolationStatus) {
+          await db.logActivity({ userId: ctx.user.id, action: "device_isolation_changed", module: "devices", details: `Status izolacji zmieniony na: ${data.isolationStatus}`, severity: data.isolationStatus === "online" ? "warning" : "info" });
+        }
       }),
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) => db.deleteDevice(input.id, ctx.user.id)),
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteDevice(input.id, ctx.user.id);
+        await db.logActivity({ userId: ctx.user.id, action: "device_deleted", module: "devices", details: `Usunięto urządzenie ID: ${input.id}`, severity: "warning" });
+      }),
     syncNow: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) =>
-        db.updateDevice(input.id, ctx.user.id, { lastSync: new Date() })
-      ),
+      .mutation(async ({ ctx, input }) => {
+        await db.updateDevice(input.id, ctx.user.id, { lastSync: new Date() });
+        await db.logActivity({ userId: ctx.user.id, action: "device_synced", module: "devices", details: `Sync urządzenia ID: ${input.id}`, severity: "info" });
+      }),
+    verify: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateDevice(input.id, ctx.user.id, { isVerified: true, verifiedAt: new Date() });
+        await db.logActivity({ userId: ctx.user.id, action: "device_verified", module: "devices", details: `Zweryfikowano urządzenie ID: ${input.id}`, severity: "info" });
+      }),
   }),
 
   // ─── OPSEC Checklist ────────────────────────────────────────────────────────
@@ -70,18 +98,21 @@ export const appRouter = router({
         description: z.string().optional(),
         priority: z.enum(["critical", "high", "medium", "low"]),
         notes: z.string().optional(),
+        dueDate: z.date().optional(),
       }))
-      .mutation(({ ctx, input }) =>
-        db.createOpsecItem({ ...input, userId: ctx.user.id })
-      ),
+      .mutation(async ({ ctx, input }) => {
+        await db.createOpsecItem({ ...input, userId: ctx.user.id });
+        await db.logActivity({ userId: ctx.user.id, action: "opsec_item_created", module: "opsec", details: `Dodano punkt OPSEC: ${input.title}`, severity: "info" });
+      }),
     toggle: protectedProcedure
       .input(z.object({ id: z.number(), isCompleted: z.boolean() }))
-      .mutation(({ ctx, input }) =>
-        db.updateOpsecItem(input.id, ctx.user.id, {
+      .mutation(async ({ ctx, input }) => {
+        await db.updateOpsecItem(input.id, ctx.user.id, {
           isCompleted: input.isCompleted,
           completedAt: input.isCompleted ? new Date() : null,
-        })
-      ),
+        });
+        await db.logActivity({ userId: ctx.user.id, action: input.isCompleted ? "opsec_completed" : "opsec_uncompleted", module: "opsec", details: `OPSEC item ID: ${input.id}`, severity: "info" });
+      }),
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
@@ -89,6 +120,7 @@ export const appRouter = router({
         description: z.string().optional(),
         priority: z.enum(["critical", "high", "medium", "low"]).optional(),
         notes: z.string().optional(),
+        dueDate: z.date().optional(),
       }))
       .mutation(({ ctx, input }) => {
         const { id, ...data } = input;
@@ -96,8 +128,15 @@ export const appRouter = router({
       }),
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) => db.deleteOpsecItem(input.id, ctx.user.id)),
-    seed: protectedProcedure.mutation(({ ctx }) => seedDefaultData(ctx.user.id)),
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteOpsecItem(input.id, ctx.user.id);
+        await db.logActivity({ userId: ctx.user.id, action: "opsec_deleted", module: "opsec", details: `Usunięto OPSEC item ID: ${input.id}`, severity: "warning" });
+      }),
+    seed: protectedProcedure.mutation(async ({ ctx }) => {
+      const result = await seedDefaultData(ctx.user.id);
+      await db.logActivity({ userId: ctx.user.id, action: "opsec_seeded", module: "opsec", details: "Załadowano domyślną listę OPSEC", severity: "info" });
+      return result;
+    }),
   }),
 
   // ─── Audit Schedule ──────────────────────────────────────────────────────────
@@ -111,18 +150,20 @@ export const appRouter = router({
         recurrence: z.enum(["once", "daily", "weekly", "monthly"]),
         severity: z.enum(["critical", "high", "medium", "low", "info"]).optional(),
       }))
-      .mutation(({ ctx, input }) =>
-        db.createAudit({ ...input, userId: ctx.user.id })
-      ),
+      .mutation(async ({ ctx, input }) => {
+        await db.createAudit({ ...input, userId: ctx.user.id });
+        await db.logActivity({ userId: ctx.user.id, action: "audit_scheduled", module: "audits", details: `Zaplanowano audyt: ${input.title}`, severity: "info" });
+      }),
     complete: protectedProcedure
       .input(z.object({ id: z.number(), findings: z.string().optional() }))
-      .mutation(({ ctx, input }) =>
-        db.updateAudit(input.id, ctx.user.id, {
+      .mutation(async ({ ctx, input }) => {
+        await db.updateAudit(input.id, ctx.user.id, {
           status: "completed",
           completedAt: new Date(),
           findings: input.findings,
-        })
-      ),
+        });
+        await db.logActivity({ userId: ctx.user.id, action: "audit_completed", module: "audits", details: `Zakończono audyt ID: ${input.id}`, severity: "info" });
+      }),
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
@@ -153,9 +194,10 @@ export const appRouter = router({
         targetDevice: z.string().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) =>
-        db.createTransferSession({ ...input, userId: ctx.user.id })
-      ),
+      .mutation(async ({ ctx, input }) => {
+        await db.createTransferSession({ ...input, userId: ctx.user.id });
+        await db.logActivity({ userId: ctx.user.id, action: "qr_transfer_created", module: "transfer", details: `Transfer QR ${input.direction}: ${input.dataType}`, severity: "info" });
+      }),
     updateStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
@@ -177,14 +219,16 @@ export const appRouter = router({
         location: z.string().optional(),
         automationRule: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) =>
-        db.createSmartHomeDevice({ ...input, userId: ctx.user.id })
-      ),
+      .mutation(async ({ ctx, input }) => {
+        await db.createSmartHomeDevice({ ...input, userId: ctx.user.id });
+        await db.logActivity({ userId: ctx.user.id, action: "smart_home_device_added", module: "smart_home", details: `Dodano urządzenie Smart Home: ${input.name}`, severity: "info" });
+      }),
     toggle: protectedProcedure
       .input(z.object({ id: z.number(), isPowered: z.boolean() }))
-      .mutation(({ ctx, input }) =>
-        db.updateSmartHomeDevice(input.id, ctx.user.id, { isPowered: input.isPowered })
-      ),
+      .mutation(async ({ ctx, input }) => {
+        await db.updateSmartHomeDevice(input.id, ctx.user.id, { isPowered: input.isPowered });
+        await db.logActivity({ userId: ctx.user.id, action: input.isPowered ? "smart_home_on" : "smart_home_off", module: "smart_home", details: `Urządzenie ID: ${input.id} ${input.isPowered ? "włączone" : "wyłączone"}`, severity: "info" });
+      }),
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
@@ -249,9 +293,10 @@ export const appRouter = router({
         content: z.string().optional(),
         tags: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) =>
-        db.createSecureNote({ ...input, userId: ctx.user.id })
-      ),
+      .mutation(async ({ ctx, input }) => {
+        await db.createSecureNote({ ...input, userId: ctx.user.id });
+        await db.logActivity({ userId: ctx.user.id, action: "note_created", module: "notes", details: `Dodano notatkę: ${input.title}`, severity: "info" });
+      }),
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
@@ -266,6 +311,103 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(({ ctx, input }) => db.deleteSecureNote(input.id, ctx.user.id)),
+  }),
+
+  // ─── Incidents ────────────────────────────────────────────────────────────────
+  incidents: router({
+    list: protectedProcedure.query(({ ctx }) => db.getIncidents(ctx.user.id)),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ ctx, input }) => db.getIncident(input.id, ctx.user.id)),
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        severity: z.enum(["critical", "high", "medium", "low", "info"]),
+        category: z.enum(["physical_breach", "network_intrusion", "device_compromise", "data_leak", "social_engineering", "malware", "unauthorized_access", "other"]),
+        affectedDevices: z.string().optional(),
+        mitigationSteps: z.string().optional(),
+        reportedBy: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createIncident({ ...input, userId: ctx.user.id });
+        await db.logActivity({ userId: ctx.user.id, action: "incident_created", module: "incidents", details: `Zgłoszono incydent: ${input.title} [${input.severity}]`, severity: input.severity === "critical" ? "critical" : input.severity === "high" ? "error" : "warning" });
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        severity: z.enum(["critical", "high", "medium", "low", "info"]).optional(),
+        status: z.enum(["open", "investigating", "contained", "resolved", "closed"]).optional(),
+        mitigationSteps: z.string().optional(),
+        timeline: z.string().optional(),
+        affectedDevices: z.string().optional(),
+        resolvedAt: z.date().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateIncident(id, ctx.user.id, data);
+        if (data.status) {
+          await db.logActivity({ userId: ctx.user.id, action: "incident_status_changed", module: "incidents", details: `Incydent ID: ${id} → ${data.status}`, severity: data.status === "resolved" || data.status === "closed" ? "info" : "warning" });
+        }
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => db.deleteIncident(input.id, ctx.user.id)),
+    resolve: protectedProcedure
+      .input(z.object({ id: z.number(), mitigationSteps: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateIncident(input.id, ctx.user.id, {
+          status: "resolved",
+          resolvedAt: new Date(),
+          mitigationSteps: input.mitigationSteps,
+        });
+        await db.logActivity({ userId: ctx.user.id, action: "incident_resolved", module: "incidents", details: `Rozwiązano incydent ID: ${input.id}`, severity: "info" });
+      }),
+  }),
+
+  // ─── Threat Indicators ────────────────────────────────────────────────────────
+  threats: router({
+    list: protectedProcedure.query(({ ctx }) => db.getThreatIndicators(ctx.user.id)),
+    create: protectedProcedure
+      .input(z.object({
+        type: z.enum(["ioc", "ttp", "vulnerability", "risk_factor", "anomaly"]),
+        title: z.string().min(1),
+        description: z.string().optional(),
+        severity: z.enum(["critical", "high", "medium", "low"]),
+        source: z.string().optional(),
+        mitigationNote: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createThreatIndicator({ ...input, userId: ctx.user.id });
+        await db.logActivity({ userId: ctx.user.id, action: "threat_added", module: "threats", details: `Dodano zagrożenie: ${input.title} [${input.severity}]`, severity: input.severity === "critical" ? "critical" : "warning" });
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        severity: z.enum(["critical", "high", "medium", "low"]).optional(),
+        status: z.enum(["active", "mitigated", "false_positive", "monitoring"]).optional(),
+        mitigationNote: z.string().optional(),
+      }))
+      .mutation(({ ctx, input }) => {
+        const { id, ...data } = input;
+        return db.updateThreatIndicator(id, ctx.user.id, data);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => db.deleteThreatIndicator(input.id, ctx.user.id)),
+    mitigate: protectedProcedure
+      .input(z.object({ id: z.number(), note: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateThreatIndicator(input.id, ctx.user.id, {
+          status: "mitigated",
+          mitigationNote: input.note,
+        });
+        await db.logActivity({ userId: ctx.user.id, action: "threat_mitigated", module: "threats", details: `Złagodzono zagrożenie ID: ${input.id}`, severity: "info" });
+      }),
   }),
 });
 
@@ -282,63 +424,81 @@ async function seedBuiltInProtocols(userId: number) {
       difficulty: "intermediate" as const,
       riskLevel: "low" as const,
       description: "Kompletna izolacja fizyczna urządzenia od sieci. Urządzenie nie posiada żadnych połączeń sieciowych - kabel Ethernet odłączony, WiFi/Bluetooth wyłączone lub usunięte.",
-      instructions: "1. Wyłącz wszystkie interfejsy sieciowe (WiFi, Bluetooth, Ethernet)\n2. Jeśli możliwe - fizycznie usuń karty sieciowe\n3. Wyłącz USB (lub użyj USB Condom dla zasilania)\n4. Zainstaluj system operacyjny z nośnika offline\n5. Regularnie weryfikuj izolację przez skanowanie RF\n6. Przechowuj w klatce Faradaya gdy nieużywane",
-      requirements: "Laptop/PC bez wbudowanego WiFi lub z możliwością jego wyłączenia, Klatka Faradaya (opcjonalnie), RF Scanner do weryfikacji",
+      instructions: "1. Wyłącz wszystkie interfejsy sieciowe (WiFi, Bluetooth, NFC)\n2. Odłącz kabel Ethernet\n3. Rozważ fizyczne usunięcie kart sieciowych\n4. Wyłącz interfejsy w BIOS/UEFI\n5. Regularnie weryfikuj status izolacji",
+      requirements: "Urządzenie bez kart sieciowych lub z wyłączonymi interfejsami, fizyczna kontrola dostępu",
       isBuiltIn: true,
+      userId,
     },
     {
-      name: "Optyczny Most Danych (QR Bridge)",
+      name: "Optical Data Bridge (QR)",
       category: "optical" as const,
-      difficulty: "advanced" as const,
-      riskLevel: "medium" as const,
-      description: "Transfer danych między urządzeniami air-gap przez kody QR wyświetlane na ekranie i skanowane kamerą. Eliminuje fizyczny kontakt między urządzeniami.",
-      instructions: "1. Na urządzeniu źródłowym: zakoduj dane jako QR (max 2953 bajtów/QR)\n2. Wyświetl kod QR na ekranie urządzenia offline\n3. Na urządzeniu docelowym: użyj kamery do skanowania\n4. Weryfikuj integralność danych przez hash SHA-256\n5. Dla większych danych: użyj sekwencji QR z numeracją\n6. Nigdy nie skanuj QR z niezaufanych źródeł",
-      requirements: "Kamera (wbudowana lub USB), Oprogramowanie do generowania/skanowania QR, Algorytm weryfikacji integralności",
+      difficulty: "beginner" as const,
+      riskLevel: "low" as const,
+      description: "Transfer danych między urządzeniami air-gap poprzez kody QR wyświetlane na ekranie i skanowane kamerą. Jednokierunkowy kanał danych.",
+      instructions: "1. Przygotuj dane do transferu (max 3KB na kod QR)\n2. Wygeneruj kod QR na urządzeniu źródłowym\n3. Zeskanuj kod kamerą urządzenia docelowego\n4. Zweryfikuj integralność danych (hash SHA-256)\n5. Zniszcz tymczasowe pliki po transferze",
+      requirements: "Kamera, generator QR, weryfikacja hash",
       isBuiltIn: true,
+      userId,
     },
     {
-      name: "Klatka Faradaya",
+      name: "Faraday Box Protocol",
       category: "physical" as const,
       difficulty: "beginner" as const,
       riskLevel: "low" as const,
-      description: "Metalowa obudowa blokująca sygnały elektromagnetyczne. Chroni urządzenie przed zdalnym podsłuchem, atakami TEMPEST i nieautoryzowaną komunikacją bezprzewodową.",
-      instructions: "1. Użyj metalowego pojemnika (stal, aluminium, miedź)\n2. Upewnij się że nie ma szczelin > 1/10 długości fali\n3. Testuj skuteczność: umieść telefon w środku i zadzwoń\n4. Dla laptopów: specjalne torby Faradaya lub metalowe skrzynki\n5. Pamiętaj: klatka Faradaya nie chroni przed atakami przez przewody\n6. Regularnie sprawdzaj integralność klatki",
-      requirements: "Metalowy pojemnik lub torba Faradaya, Tester RF lub telefon do weryfikacji, Uszczelki przewodzące dla pokryw",
+      description: "Przechowywanie urządzeń w klatce Faradaya blokującej sygnały elektromagnetyczne. Ochrona przed zdalną eksploatacją i atakami side-channel.",
+      instructions: "1. Umieść urządzenie w klatce Faradaya (metalowa siatka/pudełko)\n2. Upewnij się o szczelności połączeń\n3. Przetestuj blokowanie sygnału (brak WiFi/GSM)\n4. Wyjmuj urządzenie tylko gdy konieczne\n5. Dokumentuj każde wyjęcie urządzenia",
+      requirements: "Klatka Faradaya, miernik pola EM, dziennik dostępu",
       isBuiltIn: true,
+      userId,
+    },
+    {
+      name: "Acoustic Data Bridge",
+      category: "acoustic" as const,
+      difficulty: "advanced" as const,
+      riskLevel: "medium" as const,
+      description: "Transfer danych poprzez dźwięk (ultradźwięki lub DTMF). Używany gdy optyczny kanał jest niedostępny. Wymaga specjalistycznego oprogramowania.",
+      instructions: "1. Zainstaluj oprogramowanie do kodowania/dekodowania akustycznego\n2. Skalibruj mikrofon i głośnik\n3. Koduj dane jako sygnał akustyczny\n4. Transmituj na częstotliwości ultradźwiękowej (>18kHz)\n5. Weryfikuj integralność po odbiorze",
+      requirements: "Mikrofon, głośnik, oprogramowanie akustyczne, izolacja akustyczna pomieszczenia",
+      isBuiltIn: true,
+      userId,
     },
     {
       name: "Dead Drop Protocol",
       category: "physical" as const,
       difficulty: "intermediate" as const,
       riskLevel: "medium" as const,
-      description: "Wymiana danych przez fizyczny nośnik (USB, karta SD) pozostawiony w umówionym miejscu. Eliminuje bezpośredni kontakt między stronami wymiany.",
-      instructions: "1. Użyj zaszyfrowanego nośnika (VeraCrypt, BitLocker)\n2. Umów z góry lokalizację dead drop\n3. Użyj jednorazowych nośników gdy możliwe\n4. Weryfikuj nośnik przed użyciem (skanowanie AV w izolacji)\n5. Używaj USB Condom przy pierwszym podłączeniu\n6. Zniszcz nośnik po jednorazowym użyciu",
-      requirements: "Zaszyfrowany nośnik USB, USB Condom/bloker danych, Oprogramowanie do weryfikacji integralności, Bezpieczna lokalizacja dead drop",
+      description: "Fizyczny transfer danych przez zaszyfrowane nośniki pozostawiane w umówionym miejscu. Brak bezpośredniego kontaktu między stronami.",
+      instructions: "1. Zaszyfruj dane (AES-256) przed zapisem na nośniku\n2. Użyj jednorazowego nośnika (USB)\n3. Pozostaw nośnik w umówionym miejscu\n4. Potwierdź odbiór przez bezpieczny kanał\n5. Zniszcz nośnik po transferze (degauss/fizyczne zniszczenie)",
+      requirements: "Zaszyfrowany nośnik USB, fizyczna lokalizacja dead-drop, protokół potwierdzenia",
       isBuiltIn: true,
+      userId,
     },
     {
-      name: "Akustyczny Most Danych",
-      category: "acoustic" as const,
-      difficulty: "expert" as const,
-      riskLevel: "high" as const,
-      description: "Transfer danych przez dźwięk (ultradźwięki lub słyszalne tony). Eksperymentalna metoda dla ekstremalnych scenariuszy izolacji. Prędkość: ~100-200 bajtów/s.",
-      instructions: "1. Użyj biblioteki jak GGWAVE lub własnej implementacji\n2. Koduj dane jako sekwencje tonów (FSK/OFDM)\n3. Mikrofon odbiornika musi być w odległości < 5m\n4. Unikaj hałaśliwego otoczenia\n5. Weryfikuj każdy pakiet przez CRC\n6. Szyfruj dane przed transmisją akustyczną",
-      requirements: "Głośnik (nadajnik), Mikrofon (odbiornik), Biblioteka GGWAVE lub podobna, Ciche otoczenie",
+      name: "Network Segmentation",
+      category: "network" as const,
+      difficulty: "intermediate" as const,
+      riskLevel: "medium" as const,
+      description: "Separacja sieci na izolowane segmenty (VLAN) z kontrolą przepływu danych między nimi. Minimalizacja powierzchni ataku.",
+      instructions: "1. Zidentyfikuj grupy urządzeń wymagające izolacji\n2. Skonfiguruj VLAN dla każdego segmentu\n3. Ustaw reguły firewall między segmentami\n4. Monitoruj ruch między VLAN-ami\n5. Regularnie audytuj reguły segmentacji",
+      requirements: "Zarządzalny switch, firewall, wiedza z zakresu sieci",
       isBuiltIn: true,
+      userId,
     },
     {
-      name: "Kill Switch USB",
-      category: "physical" as const,
+      name: "Full Disk Encryption",
+      category: "cryptographic" as const,
       difficulty: "beginner" as const,
       riskLevel: "low" as const,
-      description: "Fizyczny przełącznik podłączony do USB inicjujący natychmiastowe szyfrowanie/wyłączenie systemu. Ochrona przed nieautoryzowanym dostępem fizycznym.",
-      instructions: "1. Skonfiguruj skrypt wywoływany przez udev przy odłączeniu USB\n2. Skrypt: natychmiastowe szyfrowanie RAM (TRESOR), wyłączenie\n3. Alternatywnie: USBKill - urządzenie generujące ładunek elektryczny\n4. Testuj regularnie w kontrolowanych warunkach\n5. Noś klucz USB zawsze przy sobie\n6. Skonfiguruj też softwarowy kill switch (hotkey)",
-      requirements: "USB drive (klucz), Skrypt udev (Linux) lub AutoRun (Windows), Opcjonalnie: USBKill hardware",
+      description: "Szyfrowanie całego dysku urządzenia (LUKS/BitLocker/VeraCrypt). Ochrona danych w przypadku fizycznej kradzieży urządzenia.",
+      instructions: "1. Wybierz narzędzie szyfrowania (LUKS dla Linux, VeraCrypt cross-platform)\n2. Wygeneruj silne hasło (min. 20 znaków, losowe)\n3. Zaszyfruj dysk przed instalacją systemu\n4. Przechowuj klucz odzyskiwania w bezpiecznym miejscu offline\n5. Testuj odzyskiwanie co 6 miesięcy",
+      requirements: "VeraCrypt/LUKS/BitLocker, bezpieczne przechowywanie klucza",
       isBuiltIn: true,
+      userId,
     },
   ];
 
   for (const protocol of protocols) {
-    await db.createSecurityProtocol({ ...protocol, userId });
+    await db.createSecurityProtocol(protocol);
   }
+  return { seeded: true, count: protocols.length };
 }

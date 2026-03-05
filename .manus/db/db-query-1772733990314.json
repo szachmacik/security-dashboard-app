@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE devices \n  ADD COLUMN IF NOT EXISTS os VARCHAR(64),\n  ADD COLUMN IF NOT EXISTS purpose TEXT,\n  ADD COLUMN IF NOT EXISTS notes TEXT,\n  ADD COLUMN IF NOT EXISTS riskLevel ENUM('low','medium','high','critical') NOT NULL DEFAULT 'low',\n  ADD COLUMN IF NOT EXISTS isVerified BOOLEAN NOT NULL DEFAULT FALSE,\n  ADD COLUMN IF NOT EXISTS verifiedAt TIMESTAMP NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3jSTeLwusgZ5vA4.b94007a0e24c --database PLTHGg6uJ5MQoKnCedZ5nh --execute \nALTER TABLE devices \n  ADD COLUMN IF NOT EXISTS os VARCHAR(64),\n  ADD COLUMN IF NOT EXISTS purpose TEXT,\n  ADD COLUMN IF NOT EXISTS notes TEXT,\n  ADD COLUMN IF NOT EXISTS riskLevel ENUM('low','medium','high','critical') NOT NULL DEFAULT 'low',\n  ADD COLUMN IF NOT EXISTS isVerified BOOLEAN NOT NULL DEFAULT FALSE,\n  ADD COLUMN IF NOT EXISTS verifiedAt TIMESTAMP NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 881
+}

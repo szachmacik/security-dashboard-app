@@ -114,8 +114,8 @@
 - [x] Secure notes module (encrypted notes storage)
 - [x] Protocol effectiveness ratings
 - [x] Incident response documentation in protocols
-- [ ] Password/key strength evaluator (future enhancement)
-- [ ] Network exposure analyzer (future enhancement)
+- [x] Password/key strength evaluator (PasswordEvaluator page - lokalnie, bez API)
+- [x] Network exposure analyzer (NetworkExposure page)
 - [ ] Real-time threat feed integration (future enhancement)
 - [ ] Two-factor authentication for sensitive operations (future enhancement)
 
@@ -128,6 +128,27 @@
 - [x] Add SecureNotes to navigation (FileText icon)
 - [x] Add SecureNotes route to App.tsx
 
+## Nowe moduły (v3)
+- [x] DB: incidents, activity_log, threat_indicators tables (SQL migration)
+- [x] DB: brakujące kolumny w devices (os, purpose, notes, riskLevel, isVerified)
+- [x] DB: brakujące kolumny w opsec_items (isDefault, notes, dueDate)
+- [x] tRPC: incidents, threats, activityLog, stats routery
+- [x] IncidentResponse - zarządzanie incydentami bezpieczeństwa
+- [x] ThreatIndicators - IOC, TTP, podatności, anomalie
+- [x] Rozbudowa Dashboard - Activity Log, incident stats, quick actions
+- [x] Rozbudowa OpsecChecklist - bulk actions, eksport CSV, statystyki
+- [x] Rozbudowa QRTransfer - SHA-256 hash, timer, chunked QR
+- [x] Rozbudowa DeviceRegistry - risk score, search, eksport, weryfikacja
+- [x] Rozbudowa ProtocolLibrary - search, eksport, porównanie
+- [x] Rozbudowa AuditSchedule - completion dialog, timeline, eksport
+- [x] Rozbudowa SmartHome - grupy, scenariusze, kill-switch, energy
+- [x] Rozbudowa PhysicalSecurity - checklist, BIOS lock, Tamper detection
+- [x] Rozbudowa TransferCalculator - 7 metod, wykres Recharts
+- [x] Rozbudowa ConfigExport - AES-256-GCM Web Crypto API, SHA-256
+- [x] SecurityLayout - mobilne menu, grupowanie nawigacji, badge incydentów
+- [x] SecuritySkeleton - komponent skeleton loading
+- [x] 14/14 testów przechodzi
+
 ## GitHub
 - [x] Repository: szachmacik/cyber-bunker-security (private)
 - [x] README.md with full documentation
@@ -139,7 +160,8 @@
 - [x] code-patterns/security-score.ts
 - [x] code-patterns/qr-transfer.ts
 - [x] code-patterns/audit-logger.ts
-- [ ] Push v2 improvements to GitHub
+- [x] Push v2 improvements to GitHub
+- [ ] Push v3 improvements to GitHub
 
 ## Google Drive Tracking
 - [x] Create tracking file on Google Drive
