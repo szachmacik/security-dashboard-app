@@ -19,7 +19,10 @@ import SecureNotes from "./pages/SecureNotes";
 import IncidentResponse from "./pages/IncidentResponse";
 import ThreatIndicators from "./pages/ThreatIndicators";
 import PasswordEvaluator from "./pages/PasswordEvaluator";
-import NetworkExposure from "./pages/NetworkExposure";
+import NetworkExposure from "@/pages/NetworkExposure";
+import SecurityReports from "@/pages/SecurityReports";
+import EntropyAnalyzer from "@/pages/EntropyAnalyzer";
+import OsintDefense from "@/pages/OsintDefense";
 
 function Router() {
   return (
@@ -40,6 +43,9 @@ function Router() {
         <Route path="/threats" component={ThreatIndicators} />
         <Route path="/passwords" component={PasswordEvaluator} />
         <Route path="/network" component={NetworkExposure} />
+        <Route path="/reports" component={SecurityReports} />
+        <Route path="/entropy" component={EntropyAnalyzer} />
+        <Route path="/osint" component={OsintDefense} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

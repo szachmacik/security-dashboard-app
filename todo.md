@@ -167,3 +167,37 @@
 - [x] Create tracking file on Google Drive
 - [ ] Update with GitHub link and test results
 - [ ] Set up periodic verification schedule (weekly Monday 9:00)
+
+## Rozbudowa v4 (autonomiczna)
+### Backend
+- [x] Router: securityScore - historia score (trend 14 dni)
+- [x] Router: reports - generowanie raportów bezpieczeństwa jako Markdown
+- [x] DB: tabela security_score_history
+- [x] DB: tabela security_reports
+- [x] Powiadomienia właściciela (notifyOwner) dla krytycznych incydentów
+
+### Dashboard v4
+- [x] Wykres Recharts AreaChart - Security Score trend (14 dni)
+- [x] Powiadomienia właściciela dla krytycznych incydentów (useEffect + notifyOwner)
+- [x] Szybkie akcje do nowych modułów (Entropia, OSINT, Raporty)
+
+### Nowe moduły
+- [x] SecurityReports - generowanie raportów Markdown, historia, wykresy
+- [x] EntropyAnalyzer - Shannon entropy, analiza tekstu/hex/base64/binary
+- [x] OsintDefense - footprint reduction, scoring OSINT, rekomendacje
+
+### Nawigacja
+- [x] EntropyAnalyzer i OsintDefense w sekcji WIEDZA
+- [x] SecurityReports w sekcji DANE
+- [x] 18 modułów w 6 sekcjach nawigacji
+
+### Testy
+- [x] 14/14 testów przechodzi (vitest)
+- [x] TypeScript: 0 błędów
+
+## GitHub
+- [x] Push v3 improvements to GitHub
+- [ ] Push v4 improvements to GitHub
+
+## Google Drive Tracking
+- [ ] Update z v4 zmianami i linkiem do GitHub

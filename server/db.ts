@@ -425,3 +425,161 @@ export async function getSecurityStats(userId: number) {
     recentActivity,
   };
 }
+
+// ─── Security Score History ────────────────────────────────────────────────────
+export async function saveScoreSnapshot(userId: number, data: {
+  score: number;
+  deviceCount: number;
+  opsecCompleted: number;
+  opsecTotal: number;
+  openIncidents: number;
+  activeThreats: number;
+  notes?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    // Use raw SQL since we don't have a Drizzle schema object for this table yet
+    await db.execute(
+      `INSERT INTO security_score_history (userId, score, deviceCount, opsecCompleted, opsecTotal, openIncidents, activeThreats, notes)
+       VALUES (${userId}, ${data.score}, ${data.deviceCount}, ${data.opsecCompleted}, ${data.opsecTotal}, ${data.openIncidents}, ${data.activeThreats}, ${data.notes ? `'${data.notes.replace(/'/g, "''")}'` : 'NULL'})`
+    );
+  } catch {
+    // Non-critical
+  }
+}
+
+export async function getScoreHistory(userId: number, days = 30): Promise<Array<{
+  score: number;
+  deviceCount: number;
+  opsecCompleted: number;
+  opsecTotal: number;
+  openIncidents: number;
+  activeThreats: number;
+  recordedAt: Date;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const rows = await db.execute(
+      `SELECT score, deviceCount, opsecCompleted, opsecTotal, openIncidents, activeThreats, recordedAt
+       FROM security_score_history
+       WHERE userId = ${userId} AND recordedAt >= DATE_SUB(NOW(), INTERVAL ${days} DAY)
+       ORDER BY recordedAt ASC`
+    );
+    return (rows[0] as unknown as Array<Record<string, unknown>>).map(r => ({
+      score: Number(r.score),
+      deviceCount: Number(r.deviceCount),
+      opsecCompleted: Number(r.opsecCompleted),
+      opsecTotal: Number(r.opsecTotal),
+      openIncidents: Number(r.openIncidents),
+      activeThreats: Number(r.activeThreats),
+      recordedAt: new Date(r.recordedAt as string),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getScoreHistoryStats(userId: number): Promise<{
+  current: number;
+  previous: number;
+  trend: "up" | "down" | "stable";
+  min7d: number;
+  max7d: number;
+  avg30d: number;
+}> {
+  const db = await getDb();
+  if (!db) return { current: 0, previous: 0, trend: "stable", min7d: 0, max7d: 0, avg30d: 0 };
+  try {
+    const rows = await db.execute(
+      `SELECT 
+        (SELECT score FROM security_score_history WHERE userId=${userId} ORDER BY recordedAt DESC LIMIT 1) as current_score,
+        (SELECT score FROM security_score_history WHERE userId=${userId} ORDER BY recordedAt DESC LIMIT 1 OFFSET 1) as previous_score,
+        (SELECT MIN(score) FROM security_score_history WHERE userId=${userId} AND recordedAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)) as min7d,
+        (SELECT MAX(score) FROM security_score_history WHERE userId=${userId} AND recordedAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)) as max7d,
+        (SELECT AVG(score) FROM security_score_history WHERE userId=${userId} AND recordedAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as avg30d`
+    );
+    const r = (rows[0] as unknown as Array<Record<string, unknown>>)[0] || {};
+    const current = Number(r.current_score ?? 0);
+    const previous = Number(r.previous_score ?? current);
+    return {
+      current,
+      previous,
+      trend: current > previous ? "up" : current < previous ? "down" : "stable",
+      min7d: Number(r.min7d ?? current),
+      max7d: Number(r.max7d ?? current),
+      avg30d: Math.round(Number(r.avg30d ?? current)),
+    };
+  } catch {
+    return { current: 0, previous: 0, trend: "stable", min7d: 0, max7d: 0, avg30d: 0 };
+  }
+}
+
+// ─── Security Reports ─────────────────────────────────────────────────────────
+export async function getSecurityReports(userId: number): Promise<Array<{
+  id: number;
+  title: string;
+  reportType: string;
+  summary: string | null;
+  score: number | null;
+  status: string;
+  createdAt: Date;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const rows = await db.execute(
+      `SELECT id, title, reportType, summary, score, status, createdAt FROM security_reports WHERE userId=${userId} ORDER BY createdAt DESC`
+    );
+    return (rows[0] as unknown as Array<Record<string, unknown>>).map(r => ({
+      id: Number(r.id),
+      title: String(r.title),
+      reportType: String(r.reportType),
+      summary: r.summary ? String(r.summary) : null,
+      score: r.score !== null ? Number(r.score) : null,
+      status: String(r.status),
+      createdAt: new Date(r.createdAt as string),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function createSecurityReport(userId: number, data: {
+  title: string;
+  reportType: string;
+  content: string;
+  summary: string;
+  score: number;
+  status?: string;
+}): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const safe = (s: string) => s.replace(/'/g, "''");
+  const result = await db.execute(
+    `INSERT INTO security_reports (userId, title, reportType, content, summary, score, status)
+     VALUES (${userId}, '${safe(data.title)}', '${safe(data.reportType)}', '${safe(data.content)}', '${safe(data.summary)}', ${data.score}, '${data.status ?? "final"}')`  
+  );
+  return (result[0] as unknown as { insertId: number }).insertId;
+}
+
+export async function getSecurityReportContent(id: number, userId: number): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const rows = await db.execute(
+      `SELECT content FROM security_reports WHERE id=${id} AND userId=${userId} LIMIT 1`
+    );
+    const r = (rows[0] as unknown as Array<Record<string, unknown>>)[0];
+    return r ? String(r.content) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteSecurityReport(id: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.execute(`DELETE FROM security_reports WHERE id=${id} AND userId=${userId}`);
+}

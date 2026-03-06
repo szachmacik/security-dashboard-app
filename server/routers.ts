@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { seedDefaultData } from "./seed";
+import { notifyOwner } from "./_core/notification";
 
 export const appRouter = router({
   system: systemRouter,
@@ -365,6 +366,75 @@ export const appRouter = router({
         });
         await db.logActivity({ userId: ctx.user.id, action: "incident_resolved", module: "incidents", details: `Rozwiązano incydent ID: ${input.id}`, severity: "info" });
       }),
+  }),
+
+  // ─── Score History & Trends ──────────────────────────────────────────────────
+  scoreHistory: router({
+    get: protectedProcedure
+      .input(z.object({ days: z.number().min(7).max(90).default(30) }))
+      .query(({ ctx, input }) => db.getScoreHistory(ctx.user.id, input.days)),
+    stats: protectedProcedure.query(({ ctx }) => db.getScoreHistoryStats(ctx.user.id)),
+    snapshot: protectedProcedure.mutation(async ({ ctx }) => {
+      const stats = await db.getSecurityStats(ctx.user.id);
+      if (!stats) return;
+      await db.saveScoreSnapshot(ctx.user.id, {
+        score: stats.securityScore,
+        deviceCount: stats.devices.total,
+        opsecCompleted: stats.opsec.completed,
+        opsecTotal: stats.opsec.total,
+        openIncidents: stats.incidents.open,
+        activeThreats: stats.threats.active,
+      });
+      // Notify owner if score is critical or incidents are critical
+      if (stats.securityScore < 40) {
+        await notifyOwner({
+          title: `⚠️ Security Score krytyczny: ${stats.securityScore}/100`,
+          content: `Poziom zagrożenia: ${stats.threatLevel}\nOtwarte incydenty: ${stats.incidents.open}\nAktywne zagrożenia: ${stats.threats.active}\nUrządzenia online: ${stats.devices.online}`,
+        });
+      }
+      return { saved: true, score: stats.securityScore };
+    }),
+  }),
+
+  // ─── Security Reports ─────────────────────────────────────────────────────────
+  reports: router({
+    list: protectedProcedure.query(({ ctx }) => db.getSecurityReports(ctx.user.id)),
+    generate: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        reportType: z.enum(["weekly", "monthly", "incident", "audit", "custom"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const stats = await db.getSecurityStats(ctx.user.id);
+        if (!stats) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Cannot get stats" });
+        const devices = await db.getDevices(ctx.user.id);
+        const opsecItems = await db.getOpsecItems(ctx.user.id);
+        const incidents = await db.getIncidents(ctx.user.id);
+        const threats = await db.getThreatIndicators(ctx.user.id);
+        const audits = await db.getAudits(ctx.user.id);
+        const now = new Date();
+        const content = `# ${input.title}\n\nData generowania: ${now.toLocaleString("pl-PL")}\nTyp raportu: ${input.reportType}\n\n---\n\n## Podsumowanie Bezpieczeństwa\n\n| Metryka | Wartość |\n|---------|---------|\n| Security Score | ${stats.securityScore}/100 |\n| Poziom Zagrożenia | ${stats.threatLevel} |\n| Urządzenia (total) | ${stats.devices.total} |\n| Air-Gapped | ${stats.devices.airGapped} |\n| Online | ${stats.devices.online} |\n| OPSEC Ukończone | ${stats.opsec.completed}/${stats.opsec.total} |\n| Otwarte Incydenty | ${stats.incidents.open} |\n| Aktywne Zagrożenia | ${stats.threats.active} |\n| Zaległe Audyty | ${stats.audits.overdue} |\n\n---\n\n## Urządzenia (${devices.length})\n\n${devices.map(d => `- **${d.name}** [${d.type}] — ${d.isolationStatus} — Ryzyko: ${d.riskLevel}${d.isVerified ? " ✓" : " ⚠️"}`).join("\n")}\n\n---\n\n## OPSEC Checklist\n\n${["physical", "network", "cryptographic", "opsec", "smart_home"].map(cat => {
+          const items = opsecItems.filter(i => i.category === cat);
+          if (!items.length) return "";
+          return `### ${cat.toUpperCase()}\n${items.map(i => `- [${i.isCompleted ? "x" : " "}] **${i.priority.toUpperCase()}** ${i.title}`).join("\n")}`;
+        }).filter(Boolean).join("\n\n")}\n\n---\n\n## Incydenty (${incidents.length})\n\n${incidents.length ? incidents.map(i => `- **[${i.severity.toUpperCase()}]** ${i.title} — Status: ${i.status} — ${new Date(i.createdAt).toLocaleDateString("pl-PL")}`).join("\n") : "Brak incydentów."}\n\n---\n\n## Zagrożenia (${threats.length})\n\n${threats.length ? threats.map(t => `- **[${t.severity.toUpperCase()}]** ${t.title} — ${t.type} — Status: ${t.status}`).join("\n") : "Brak zagrożeń."}\n\n---\n\n## Audyty (${audits.length})\n\n${audits.length ? audits.map(a => `- **${a.title}** — ${a.status} — ${new Date(a.scheduledAt).toLocaleDateString("pl-PL")}${a.findings ? " — Wyniki: " + a.findings.substring(0, 100) : ""}`).join("\n") : "Brak audytów."}\n\n---\n\n*Raport wygenerowany automatycznie przez Security Dashboard - Cyber Bunker*`;
+        const summary = `Security Score: ${stats.securityScore}/100 | Zagrożenie: ${stats.threatLevel} | Urządzenia: ${stats.devices.total} | Incydenty: ${stats.incidents.open} otwarte | OPSEC: ${stats.opsec.completed}/${stats.opsec.total}`;
+        const id = await db.createSecurityReport(ctx.user.id, {
+          title: input.title,
+          reportType: input.reportType,
+          content,
+          summary,
+          score: stats.securityScore,
+        });
+        await db.logActivity({ userId: ctx.user.id, action: "report_generated", module: "reports", details: `Wygenerowano raport: ${input.title}`, severity: "info" });
+        return { id, content, summary, score: stats.securityScore };
+      }),
+    getContent: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ ctx, input }) => db.getSecurityReportContent(input.id, ctx.user.id)),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => db.deleteSecurityReport(input.id, ctx.user.id)),
   }),
 
   // ─── Threat Indicators ────────────────────────────────────────────────────────

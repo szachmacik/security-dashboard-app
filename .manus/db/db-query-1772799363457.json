@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS security_reports (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  userId INT NOT NULL,\n  title VARCHAR(255) NOT NULL,\n  reportType VARCHAR(50) NOT NULL DEFAULT 'custom',\n  content LONGTEXT NOT NULL,\n  summary TEXT,\n  score INT DEFAULT NULL,\n  status VARCHAR(50) NOT NULL DEFAULT 'final',\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_reports_userId (userId),\n  INDEX idx_reports_createdAt (createdAt)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3jSTeLwusgZ5vA4.b94007a0e24c --database PLTHGg6uJ5MQoKnCedZ5nh --execute CREATE TABLE IF NOT EXISTS security_reports (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  userId INT NOT NULL,\n  title VARCHAR(255) NOT NULL,\n  reportType VARCHAR(50) NOT NULL DEFAULT 'custom',\n  content LONGTEXT NOT NULL,\n  summary TEXT,\n  score INT DEFAULT NULL,\n  status VARCHAR(50) NOT NULL DEFAULT 'final',\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_reports_userId (userId),\n  INDEX idx_reports_createdAt (createdAt)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 176
+}
