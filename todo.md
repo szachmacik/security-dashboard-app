@@ -166,7 +166,7 @@
 ## Google Drive Tracking
 - [x] Create tracking file on Google Drive
 - [ ] Update with GitHub link and test results
-- [ ] Set up periodic verification schedule (weekly Monday 9:00)
+- [x] Set up periodic verification schedule (weekly Monday 9:00 - ACTIVE)
 
 ## Rozbudowa v4 (autonomiczna)
 ### Backend
@@ -201,3 +201,33 @@
 
 ## Google Drive Tracking
 - [ ] Update z v4 zmianami i linkiem do GitHub
+
+## Rozbudowa v5 (autonomiczna)
+### Command Palette (Cmd+K)
+- [x] Komponent CommandPalette z cmdk
+- [x] Globalne wyszukiwanie po urządzeniach, protokołach, notatkach, incydentach
+- [x] Skróty klawiszowe do nawigacji między modułami
+- [x] Integracja z SecurityLayout (Cmd+K trigger)
+
+### Eksport PDF
+- [x] Print CSS (@media print) dla SecurityReports
+- [x] Przycisk "Drukuj/Eksportuj PDF" w module SecurityReports
+- [x] Stylowanie dla druku (czarno-białe, bez nawigacji)
+
+### Steganography Guide
+- [x] Nowa strona SteganographyGuide.tsx
+- [x] Kalkulator pojemności nośnika (LSB audio/image/video)
+- [x] Interaktywny przewodnik po 7 metodach steganografii
+- [x] Zakładki: Metody, Kalkulator LSB, Wykrywanie, OPSEC
+- [x] Dodanie do nawigacji (sekcja WIEDZA)
+
+### Ulepszenia UX
+- [x] Dark/Light theme toggle w sidebar (Sun/Moon icon)
+- [x] Theme switchable=true w App.tsx
+
+### Nowe testy
+- [x] 27 nowych testów v5 (server/v5.test.ts)
+- [x] Testy kalkulatora LSB (image/audio/video)
+- [x] Testy Shannon entropy
+- [x] Testy incidents, threats, scoreHistory, reports, notes
+- [x] 41/41 testów przechodzi

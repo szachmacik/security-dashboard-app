@@ -128,7 +128,17 @@ export default function SecurityReports() {
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Historia Security Score i generowanie raportów bezpieczeństwa</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 no-print">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.print()}
+            className="border-border"
+            title="Drukuj lub eksportuj jako PDF (Ctrl+P)"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            PDF
+          </Button>
           <Button
             variant="outline"
             size="sm"

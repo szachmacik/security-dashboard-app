@@ -195,3 +195,96 @@
     }
   }
 }
+/* ─── Print / PDF Export Styles ─────────────────────────────────────────── */
+@media print {
+  /* Hide navigation, sidebars, buttons */
+  aside,
+  header,
+  nav,
+  .no-print,
+  button:not(.print-include),
+  [data-radix-popper-content-wrapper],
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  /* Reset layout for print */
+  body {
+    background: white !important;
+    color: black !important;
+    font-family: "Georgia", serif !important;
+    font-size: 11pt !important;
+  }
+
+  main {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .print-report {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Cards become simple boxes */
+  .print-report .card,
+  .print-report [class*="card"] {
+    border: 1px solid #ccc !important;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4 {
+    color: black !important;
+    page-break-after: avoid;
+  }
+
+  p, li {
+    color: #333 !important;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-before: always;
+  }
+
+  /* Links */
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+
+  /* Tables */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 4pt 8pt !important;
+    color: black !important;
+  }
+
+  /* Badges / chips */
+  [class*="badge"],
+  [class*="Badge"] {
+    border: 1px solid #999 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 2cm;
+    size: A4;
+  }
+}

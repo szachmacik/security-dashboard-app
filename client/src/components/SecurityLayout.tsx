@@ -17,6 +17,7 @@ import {
   BarChart2,
   Home,
   Key,
+  Layers,
   Lock,
   LogOut,
   Menu,
@@ -24,14 +25,19 @@ import {
   Network,
   QrCode,
   Radar,
+  Search,
   Shield,
   ShieldAlert,
   User,
   X,
+  Moon,
+  Sun,
   Zap,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { CommandPalette, useCommandPalette } from "./CommandPalette";
+import { useTheme } from "../contexts/ThemeContext";
 
 const navGroups = [
   {
@@ -72,6 +78,7 @@ const navGroups = [
       { path: "/audits", icon: Activity, label: "Harmonogram", description: "Audyty i weryfikacje" },
       { path: "/entropy", icon: Binary, label: "Entropia", description: "Analiza entropii Shannona" },
       { path: "/osint", icon: EyeOff, label: "OSINT Defense", description: "Ochrona przed wywiadem" },
+      { path: "/steganography", icon: Layers, label: "Steganografia", description: "Ukrywanie danych w mediach" },
     ],
   },
   {
@@ -89,6 +96,8 @@ export default function SecurityLayout({ children }: { children: React.ReactNode
   const [mobileOpen, setMobileOpen] = useState(false);
   const [location] = useLocation();
   const { user, loading, isAuthenticated, logout } = useAuth();
+  const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
+  const { theme, toggleTheme, switchable } = useTheme();
 
   // Close mobile menu on route change
   useEffect(() => { setMobileOpen(false); }, [location]);
@@ -154,6 +163,33 @@ export default function SecurityLayout({ children }: { children: React.ReactNode
           </div>
         )}
       </div>
+
+      {/* Search / Cmd+K button */}
+      {!collapsed && (
+        <div className="px-3 py-2 border-b border-border shrink-0">
+          <button
+            onClick={() => setCmdOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-accent transition-colors font-mono bg-background/50"
+          >
+            <Search className="w-3 h-3 shrink-0" />
+            <span className="flex-1 text-left">Szukaj modułów...</span>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-muted rounded text-xs opacity-60">
+              ⌘K
+            </kbd>
+          </button>
+        </div>
+      )}
+      {collapsed && (
+        <div className="px-2 py-2 border-b border-border shrink-0">
+          <button
+            onClick={() => setCmdOpen(true)}
+            className="w-full flex items-center justify-center p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors"
+            title="Szukaj (Ctrl+K)"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Security Status Bar */}
       {!collapsed && (
@@ -236,6 +272,15 @@ export default function SecurityLayout({ children }: { children: React.ReactNode
               <span className="font-mono">Wyloguj</span>
             </button>
           )}
+          {switchable && toggleTheme && (
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors"
+              title={theme === "dark" ? "Tryb jasny" : "Tryb ciemny"}
+            >
+              {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
+          )}
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors hidden lg:flex"
@@ -291,8 +336,15 @@ export default function SecurityLayout({ children }: { children: React.ReactNode
           </button>
           <ShieldAlert className="w-5 h-5 text-primary" />
           <span className="text-sm font-bold text-foreground font-mono tracking-wider">CYBER BUNKER</span>
+          <button
+            onClick={() => setCmdOpen(true)}
+            className="ml-auto p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent"
+            title="Szukaj (Ctrl+K)"
+          >
+            <Search className="w-4 h-4" />
+          </button>
           {openIncidents > 0 && (
-            <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full font-mono">
+            <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full font-mono">
               {openIncidents} OPEN
             </span>
           )}
@@ -302,6 +354,9 @@ export default function SecurityLayout({ children }: { children: React.ReactNode
           {children}
         </main>
       </div>
+
+      {/* Global Command Palette */}
+      <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
     </div>
   );
 }

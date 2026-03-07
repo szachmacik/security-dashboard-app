@@ -23,6 +23,7 @@ import NetworkExposure from "@/pages/NetworkExposure";
 import SecurityReports from "@/pages/SecurityReports";
 import EntropyAnalyzer from "@/pages/EntropyAnalyzer";
 import OsintDefense from "@/pages/OsintDefense";
+import SteganographyGuide from "@/pages/SteganographyGuide";
 
 function Router() {
   return (
@@ -46,6 +47,7 @@ function Router() {
         <Route path="/reports" component={SecurityReports} />
         <Route path="/entropy" component={EntropyAnalyzer} />
         <Route path="/osint" component={OsintDefense} />
+        <Route path="/steganography" component={SteganographyGuide} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -56,7 +58,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="dark" switchable={true}>
         <TooltipProvider>
           <Toaster />
           <Router />
