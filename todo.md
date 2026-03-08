@@ -231,3 +231,39 @@
 - [x] Testy Shannon entropy
 - [x] Testy incidents, threats, scoreHistory, reports, notes
 - [x] 41/41 testów przechodzi
+
+## Rozbudowa v6 (autonomiczna)
+### Cipher Tools
+- [x] Strona CipherTools.tsx z zakładkami AES/RSA
+- [x] AES-256-GCM szyfrowanie/deszyfrowanie (Web Crypto API, client-side)
+- [x] RSA-OAEP generowanie par kluczy (2048/4096 bit), szyfrowanie/deszyfrowanie
+- [x] Kalkulator siły klucza i porównanie algorytmów
+- [x] Dodanie do nawigacji (sekcja NARZĘDZIA)
+
+### Network Scanner (pasywny)
+- [x] Strona NetworkScanner.tsx
+- [x] Wklejanie/upload logów sieciowych (Nginx, Apache, syslog, iptables)
+- [x] Parser logów - ekstrakcja IP, portów, metod, statusów
+- [x] Wizualizacja połączeń (tabela + Recharts BarChart/PieChart)
+- [x] Wykrywanie anomalii (brute-force, port scan, suspicious paths, unusual hours)
+- [x] Eksport raportu JSON
+- [x] Dodanie do nawigacji (sekcja NARZĘDZIA)
+
+### Secure Vault
+- [x] Strona SecureVault.tsx
+- [x] AES-256-GCM szyfrowanie po stronie klienta (klucz z hasła PBKDF2 600k)
+- [x] Vault items: hasła, klucze API, seed phrases, notatki, certyfikaty, klucze SSH
+- [x] Unlock/lock vault z hasłem (klucz trzymany tylko w pamięci RAM)
+- [x] Eksport zaszyfrowanego vault jako plik .vault
+- [x] Import vault z pliku
+- [x] Auto-clear schowka po 30 sekundach
+- [x] Generator haseł (Web Crypto)
+- [x] Dodanie do nawigacji (sekcja NARZĘDZIA)
+
+### Testy v6
+- [x] 23 nowych testów v6 (server/v6.test.ts)
+- [x] Testy logiki kryptograficznej (AES, RSA, entropia)
+- [x] Testy parsera logów sieciowych (Nginx, iptables, anomalie)
+- [x] Testy Secure Vault (typy, walidacja, PBKDF2, AES-GCM)
+- [x] 64/64 testów przechodzi
+- [x] TypeScript: 0 błędów

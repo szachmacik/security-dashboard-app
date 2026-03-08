@@ -24,6 +24,9 @@ import SecurityReports from "@/pages/SecurityReports";
 import EntropyAnalyzer from "@/pages/EntropyAnalyzer";
 import OsintDefense from "@/pages/OsintDefense";
 import SteganographyGuide from "@/pages/SteganographyGuide";
+import CipherTools from "@/pages/CipherTools";
+import NetworkScanner from "@/pages/NetworkScanner";
+import SecureVault from "@/pages/SecureVault";
 
 function Router() {
   return (
@@ -48,6 +51,9 @@ function Router() {
         <Route path="/entropy" component={EntropyAnalyzer} />
         <Route path="/osint" component={OsintDefense} />
         <Route path="/steganography" component={SteganographyGuide} />
+        <Route path="/cipher" component={CipherTools} />
+        <Route path="/network-scanner" component={NetworkScanner} />
+        <Route path="/vault" component={SecureVault} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

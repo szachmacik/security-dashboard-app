@@ -82,6 +82,14 @@ const navGroups = [
     ],
   },
   {
+    label: "NARZĘDZIA",
+    items: [
+      { path: "/cipher", icon: Key, label: "Cipher Tools", description: "AES-256-GCM, RSA-OAEP" },
+      { path: "/network-scanner", icon: Network, label: "Network Scanner", description: "Analiza logów sieciowych" },
+      { path: "/vault", icon: Lock, label: "Secure Vault", description: "Sejf AES-256-GCM" },
+    ],
+  },
+  {
     label: "DANE",
     items: [
       { path: "/notes", icon: FileText, label: "Secure Notes", description: "Zaszyfrowane notatki" },
