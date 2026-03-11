@@ -149,7 +149,7 @@ export default function SecurityLayout({ children }: { children: React.ReactNode
             </div>
           </div>
           <a
-            href={getLoginUrl()}
+            href="/login"
             className="block w-full py-3 px-6 bg-primary text-primary-foreground rounded-lg font-mono text-sm font-medium hover:opacity-90 transition-opacity text-center"
           >
             AUTORYZUJ DOSTĘP
