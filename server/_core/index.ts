@@ -8,6 +8,7 @@ import { registerSupabaseAuthRoutes } from "./supabaseAuth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic } from "./vite";
+import { guardianRouter } from "../guardian";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -93,6 +94,8 @@ async function startServer() {
 
     await setupVite(app, server);
   } else {
+  // AI Guardian Bot — must be before static serving
+  app.use("/api/guardian", guardianRouter);
     serveStatic(app);
   }
 
