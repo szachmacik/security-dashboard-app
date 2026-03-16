@@ -1,5 +1,6 @@
 # ─── Sentinel Security Dashboard Dockerfile ──────────────────────────────────
 FROM node:22-alpine AS base
+ARG CACHE_BUST=1773678481
 RUN npm install -g pnpm
 WORKDIR /app
 
