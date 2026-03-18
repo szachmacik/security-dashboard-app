@@ -89,6 +89,17 @@ async function startServer() {
   );
   // development mode uses Vite, production mode uses static files
   // AI Guardian — must be before static serving
+
+  // Health check endpoint (wymagany przez monitoring i Coolify)
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      version: process.env.npm_package_version || "1.0.0",
+      timestamp: new Date().toISOString(),
+      uptime: Math.floor(process.uptime()),
+    });
+  });
+
   app.use("/api/guardian", guardianRouter);
   if (process.env.NODE_ENV === "development") {
 
