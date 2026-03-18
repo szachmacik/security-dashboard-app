@@ -1,0 +1,15 @@
+name: Deploy to Coolify
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Coolify Deploy
+        run: |
+          curl -s -f -X POST \
+            "https://coolify.ofshore.dev/api/v1/deploy?uuid=rs488c4ccg48w48gocgog8sg&force=false" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
+            && echo "Deploy triggered" || echo "Deploy trigger failed"
